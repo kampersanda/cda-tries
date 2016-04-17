@@ -5,7 +5,6 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <ctime>
-#include <stdexcept>
 
 namespace cda_tries {
 
@@ -28,10 +27,10 @@ public:
       case sw_e::SEC:
         break;
       case sw_e::MILLI:
-        sec = sec * 1000.0;
+        sec *= 1000.0;
         break;
       case sw_e::MICRO:
-        sec = sec * 1000000.0;
+        sec *= 1000000.0;
         break;
     }
     return sec;
