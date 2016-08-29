@@ -2,8 +2,8 @@
 
 This library provides a C++ implementation of compressed double-array tries for a static string dictionary, which supports two primitive operations:
 
-* $Lookup(q)$ returns the ID $\in [0, N)$ if string $q$ is stored, where $N$ is the number of strings.
-* $Access(i)$ returns the string with ID $i \in [0, N)$, that is, $Access(Lookup(q)) = q$ if $q$ is stored.
+* Lookup(q) returns the ID in [0, N) if string q is stored, where N is the number of strings.
+* Access(i) returns the string with ID i in [0, N), that is, Access(Lookup(q)) = q if q is stored.
 
 ## How to compile the library
 
@@ -35,7 +35,7 @@ If you want to build a dictionary `dict.dac` from a file `strs.sorted` by using 
 $ ./Benchmark 1 2 strs.sorted dict.dac
 ```
 
-Note that `strs.sorted ` must be lexicographically sorted.
+Note that `strs.sorted` must be lexicographically sorted.
 In addition, the strings must be ended with the `'\n'` ASCII char and must not include the `'\0'` ASCII char.
 
 
@@ -45,5 +45,5 @@ If you want to test the dictionary `dict.dac` by using a file `strs.test`, pleas
 $ ./Benchmark 2 2 strs.test dict.dac
 ```
 
-It outputs the status of `dict.dac` and tests $Lookup$ for strings in `strs.test` and $Access$ for the IDs corresponding to the strings.
+It outputs the status of `dict.dac` and tests Lookup for strings in `strs.test` and Access for the IDs corresponding to the strings.
 Note that `strs.test` must not be lexicographically sorted.
