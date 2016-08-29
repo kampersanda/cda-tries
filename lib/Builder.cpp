@@ -1,293 +1,321 @@
 #include <algorithm>
 #include <cassert>
+#include <iostream>
 
 #include "Builder.hpp"
 
-using namespace std;
-
 namespace cda_tries {
 
-Builder::Builder(const vector<string> &strs, const CodeTable &table, bc_e type)
-  : strs_(strs), table_(table), type_(type) {
-  assert(!strs.empty());
-  assert(strs.size() <= UPPER);
+Builder::Builder(const std::vector<std::string> &strs, const CodeTable &table)
+  : strs_(strs), table_(table) {}
 
-  switch (type_) {
-    case bc_e::PLAIN:
-      blkLen_ = 0;
-      break;
-    case bc_e::DAC:
-      blkLen_ = 256;
-      break;
-    case bc_e::FDAC:
-      blkLen_ = 128;
-      break;
+Builder::~Builder() {}
+
+void Builder::build_(bc_type type) {
+  if (BC_UPPER < strs_.size()) {
+    std::cerr << "Critical error: dic size is too large" << std::endl;
+    exit(1);
   }
 
-  emptyHead_ = INV_IDX;
-  edges_.reserve(256);
-  suffixes_.reserve(strs_.size());
-
-  Expand();
-  Fix(0);
-  Arrange(0, strs_.size(), 0, 0);
-  DeleteEmptyList();
-  UnifyTail();
-}
-
-void Builder::Expand() {
-  assert(bc_.size() + 256 <= UPPER);
-
-  const uint oldSize = bc_.size();
-  const uint newSize = oldSize + 256;
-
-  if (bc_.capacity() < newSize) {
-    size_t capa;
-    if (bc_.empty()) {
-      capa = 1;
-      while (capa < strs_.size()) {
-        capa <<= 1;
-      }
-    } else {
-      capa = bc_.capacity() << 1;
-    }
-
-    bc_.reserve(capa);
-    leafs_.reserve(capa);
-    terms_.reserve(capa);
-    fixed_.reserve(capa);
-    if (blkLen_ != 0) {
-      heads_.reserve(capa / blkLen_);
-    }
-  }
-
-  bc_.resize(newSize);
-  leafs_.resize(newSize, false);
-  terms_.resize(newSize, false);
-  fixed_.resize(newSize, false);
-
-  for (uint i = oldSize; i < newSize; ++i) {
-    SetPrev(i, i - 1);
-    SetNext(i, i + 1);
-  }
-
-  if (emptyHead_ == INV_IDX) {
-    SetPrev(oldSize, newSize - 1);
-    SetNext(newSize - 1, oldSize);
-    emptyHead_ = oldSize;
-  } else {
-    const uint emptyTail = Prev(emptyHead_);
-    SetPrev(oldSize, emptyTail);
-    SetNext(emptyTail, oldSize);
-    SetPrev(emptyHead_, newSize - 1);
-    SetNext(newSize - 1, emptyHead_);
-  }
-
-  if (blkLen_ != 0) {
-    for (uint i = oldSize; i < newSize; i += blkLen_) {
-      heads_.push_back(i);
-    }
-  }
-
-  const uint oldNumBlk = oldSize / 256;
-  const uint newNumBlk = oldNumBlk + 1;
-
-  if (newNumBlk > 16) {
-    const uint blk = oldNumBlk - 16;
-    const uint begin = blk * 256;
-    const uint end = (blk + 1) * 256;
-
-    for (uint i = begin; i < end; ++i) {
-      Fix(i);
-    }
-  }
-}
-
-void Builder::Fix(uint idx) {
-  if (fixed_[idx]) {
+  if (!bc_.empty()) {
     return;
   }
 
-  fixed_[idx] = true;
-  const uint prev = Prev(idx);
-  const uint next = Next(idx);
-  SetPrev(next, prev);
-  SetNext(prev, next);
+  switch (type) {
+    case bc_type::PLAIN:
+      block_size_ = 0;
+      break;
+    case bc_type::DAC:
+      block_size_ = 256;
+      break;
+    case bc_type::FDAC:
+      block_size_ = 128;
+      break;
+  }
+  emp_head_ = NOT_FOUND;
 
-  if (idx == emptyHead_) {
-    emptyHead_ = idx == next ? INV_IDX : next;
+  size_t init_capa = 1;
+  while (init_capa < strs_.size()) {
+    init_capa <<= 1;
   }
 
-  if (blkLen_ != 0) {
-    const uint blk = idx / blkLen_;
-    if (idx == heads_[blk]) {
-      if (emptyHead_ == INV_IDX || blk != next / blkLen_) {
-        heads_[blk] = INV_IDX;
-      } else {
-        heads_[blk] = next;
-      }
+  bc_.reserve(init_capa);
+  term_flags_.reserve(init_capa);
+
+  edges_.reserve(256);
+  suffixes_.reserve(strs_.size());
+  if (block_size_) {
+    emp_heads_.reserve(init_capa / block_size_);
+  }
+
+  expand_();
+  fix_(0);
+  arrange_(0, strs_.size(), 0, 0);
+  unify_tail_();
+}
+
+void Builder::expand_() {
+  if (BC_UPPER < bc_.size() + 256) {
+    std::cerr << "Critical error: dic size is too large" << std::endl;
+    exit(1);
+  }
+
+  auto old_size = static_cast<uint32_t>(bc_.size());
+  auto new_size = old_size + 256;
+
+  for (uint32_t i = 0; i < 256; ++i) {
+    bc_.push_back(bc_t{});
+    term_flags_.push_back(false);
+  }
+
+  for (auto pos = old_size; pos < new_size; ++pos) {
+    set_prev_(pos, pos - 1);
+    set_next_(pos, pos + 1);
+  }
+
+  if (emp_head_ == NOT_FOUND) {
+    set_prev_(old_size, new_size - 1);
+    set_next_(new_size - 1, old_size);
+    emp_head_ = old_size;
+  } else {
+    auto emp_tail = prev_(emp_head_);
+    set_prev_(old_size, emp_tail);
+    set_next_(emp_tail, old_size);
+    set_prev_(emp_head_, new_size - 1);
+    set_next_(new_size - 1, emp_head_);
+  }
+
+  if (block_size_) {
+    for (auto pos = old_size; pos < new_size; pos += block_size_) {
+      emp_heads_.push_back(pos);
     }
   }
 
-  bc_[idx] = bc_t{idx, idx};
+  auto old_block_size = old_size / 256;
+  if (FREE_BLOCKS <= old_block_size) {
+    fix_block_(old_block_size - FREE_BLOCKS);
+  }
 }
 
-void Builder::Arrange(size_t begin, size_t end, size_t level, uint idx) {
-  if (strs_[begin].size() == level) {
+void Builder::fix_(uint32_t pos) {
+  assert(!bc_[pos].is_fixed());
+  bc_[pos].fix();
+
+  auto prev = prev_(pos);
+  auto next = next_(pos);
+  set_prev_(next, prev);
+  set_next_(prev, next);
+
+  if (pos == emp_head_) {
+    emp_head_ = pos == next ? NOT_FOUND : next;
+  }
+
+  if (block_size_) {
+    auto block_pos = pos / block_size_;
+    if (pos != emp_heads_[block_pos]) {
+      return;
+    }
+    if (emp_head_ == NOT_FOUND || block_pos != next / block_size_) {
+      emp_heads_[block_pos] = NOT_FOUND;
+    } else {
+      emp_heads_[block_pos] = next;
+    }
+  }
+}
+
+void Builder::fix_block_(uint32_t block_pos) {
+  auto begin = block_pos * 256;
+  auto end = begin + 256;
+
+  for (auto pos = begin; pos < end; ++pos) {
+    if (!bc_[pos].is_fixed()) {
+      fix_(pos);
+      bc_[pos].unfix();
+    }
+  }
+
+  if (block_size_) {
+    for (auto pos = begin; pos < end; pos += block_size_) {
+      emp_heads_[pos / block_size_] = NOT_FOUND;
+    }
+  }
+}
+
+void Builder::arrange_(size_t begin, size_t end, size_t depth, uint32_t node_pos) {
+  if (strs_[begin].size() == depth) {
     ++begin;
-    terms_[idx] = true;
+    term_flags_[node_pos] = true;
     if (begin == end) { // without link
-      bc_[idx].base = 0;
-      leafs_[idx] = true;
+      bc_[node_pos].set_link(0);
       return;
     }
   }
 
-  if (begin + 1 == end && !terms_[idx]) { // leaf node
-    assert(strs_[begin].size() != level);
-    leafs_[idx] = true;
-    terms_[idx] = true;
-    suffix_t suf{strs_[begin].substr(level), idx};
-    reverse(suf.rstr.begin(), suf.rstr.end());
-    suffixes_.push_back(suf);
+  if (begin + 1 == end && !term_flags_[node_pos]) { // is leaf
+    if (strs_[begin].size() == depth) {
+      std::cerr << "Critical error: dic includes overlapped strs" << std::endl;
+      exit(1);
+    }
+    term_flags_[node_pos] = true;
+    auto &str = strs_[begin];
+    suffix_t suffix(str.c_str() + depth, str.size() - depth, node_pos);
+    suffixes_.push_back(suffix);
     return;
   }
 
-  { // Fetch Edges
+  { // fetch edges
     edges_.clear();
-    uint8_t label = strs_[begin][level];
-    for (size_t id = begin + 1; id < end; ++id) {
-      const uint8_t newLabel = strs_[id][level];
-      if (label != newLabel) {
+    auto label = static_cast<uint8_t>(strs_[begin][depth]);
+    for (auto str_id = begin + 1; str_id < end; ++str_id) {
+      auto _label = static_cast<uint8_t>(strs_[str_id][depth]);
+      if (label != _label) {
+        if (_label < label) {
+          std::cerr << "Critical error: dic is unsorted" << std::endl;
+          exit(1);
+        }
         edges_.push_back(label);
-        assert(label <= newLabel);
-        label = newLabel;
+        label = _label;
       }
     }
     edges_.push_back(label);
   }
 
-  const uint base = blkLen_ == 0 ? XCheck() : YCheck(idx / blkLen_);
+#ifdef ENABLE_YCHECK
+  auto base = block_size_ ? ycheck_(node_pos / block_size_) : xcheck_();
+#else
+  auto base = xcheck_();
+#endif
+
   if (bc_.size() <= base) {
-    Expand();
+    expand_();
   }
 
-  // Define
-  bc_[idx].base = base;
-  for (const uint8_t label : edges_) {
-    const uint next = base ^ table_[label];
-    Fix(next);
-    bc_[next].check = idx;
+  // define
+  bc_[node_pos].set_base(base);
+  for (auto label : edges_) {
+    auto child_pos = base ^ table_.code(label);
+    fix_(child_pos);
+    bc_[child_pos].set_check(node_pos);
   }
 
-  // Follow
-  size_t newBegin = begin;
-  uint8_t label = strs_[begin][level];
-  for (size_t newEnd = begin + 1; newEnd < end; ++newEnd) {
-    const uint8_t newLabel = strs_[newEnd][level];
-    if (label != newLabel) {
-      Arrange(newBegin, newEnd, level + 1, base ^ table_[label]);
-      label = newLabel;
-      newBegin = newEnd;
+  // follow
+  auto _begin = begin;
+  auto label = static_cast<uint8_t>(strs_[begin][depth]);
+  for (auto _end = begin + 1; _end < end; ++_end) {
+    auto _label = static_cast<uint8_t>(strs_[_end][depth]);
+    if (label != _label) {
+      arrange_(_begin, _end, depth + 1, base ^ table_.code(label));
+      label = _label;
+      _begin = _end;
     }
   }
-  Arrange(newBegin, end, level + 1, base ^ table_[label]);
+  arrange_(_begin, end, depth + 1, base ^ table_.code(label));
 }
 
-void Builder::DeleteEmptyList() {
-  if (emptyHead_ != INV_IDX) {
-    uint idx = emptyHead_;
-    do {
-      const uint next = Next(idx);
-      bc_[idx].base = idx;
-      bc_[idx].check = idx;
-      idx = next;
-    } while (emptyHead_ != idx);
-  }
-}
-
-void Builder::UnifyTail() {
-  sort(suffixes_.begin(), suffixes_.end(),
-       [](const suffix_t &lhs, const suffix_t &rhs){
-         return lhs.rstr < rhs.rstr;
-       });
-  tail_.push_back('\0');
-
-  auto append_f = [&](size_t begin, size_t end, const string &rstr) {
-    for (auto rit = rstr.rbegin(); rit != rstr.rend(); ++rit) {
-      tail_.push_back(*rit);
-    }
-
-    while (begin < end) {
-      const suffix_t &suf = suffixes_[begin++];
-      bc_[suf.idx].base = tail_.size() - suf.rstr.size();
-    }
-
-    tail_.push_back('\0');
-  };
-
-  size_t begin = 0;
-  for (size_t i = 1; i < suffixes_.size(); ++i) {
-    const string &obj = suffixes_[i - 1].rstr;
-    const string &sbj = suffixes_[i].rstr;
-
-    // can unifing
-    if (obj.size() <= sbj.size()
-        && obj.compare(0, obj.size(), sbj, 0, obj.size()) == 0) {
-      continue;
-    }
-
-    append_f(begin, i, obj);
-    begin = i;
+uint32_t Builder::xcheck_() const {
+  if (emp_head_ == NOT_FOUND) {
+    return static_cast<uint32_t>(bc_.size()) ^ edges_[0];
   }
 
-  append_f(begin, suffixes_.size(), suffixes_.back().rstr);
-}
-
-uint Builder::XCheck() const {
-  if (emptyHead_ == INV_IDX) {
-    return fixed_.size();
-  }
-
-  uint idx = emptyHead_;
+  auto pos = emp_head_;
   do {
-    const uint base = idx ^ table_[edges_[0]];
-    if (IsTarget(base)) {
+    auto base = pos ^ table_.code(edges_[0]);
+    if (is_target_(base)) {
       return base;
     }
-    idx = Next(idx);
-  } while (emptyHead_ != idx);
+    pos = next_(pos);
+  } while (emp_head_ != pos);
 
-  return fixed_.size();
+  return static_cast<uint32_t>(bc_.size()) ^ edges_[0];
 }
 
-uint Builder::YCheck(uint blk) const {
-  if (emptyHead_ == INV_IDX) {
-    return fixed_.size();
+uint32_t Builder::ycheck_(uint32_t block_pos) const {
+  if (emp_head_ == NOT_FOUND) {
+    return static_cast<uint32_t>(bc_.size()) ^ edges_[0];
   }
 
-  uint idx = heads_[blk];
-  if (idx != INV_IDX) {
+  auto pos = emp_heads_[block_pos];
+  if (pos != NOT_FOUND) {
     do {
-      const uint base = idx ^ table_[edges_[0]];
-      if (IsTarget(base)) {
+      auto base = pos ^ table_.code(edges_[0]);
+      if (is_target_(base)) {
         return base;
       }
-      idx = Next(idx);
-    } while (emptyHead_ != idx && idx / blkLen_ == blk);
+      pos = next_(pos);
+      if (pos / block_size_ != block_pos) {
+        break;
+      }
+    } while (emp_head_ != pos);
   }
 
-  return XCheck();
+  return xcheck_();
 }
 
-bool Builder::IsTarget(uint base) const {
-  for (uint8_t label : edges_) {
-    const uint idx = base ^ table_[label];
-    if (fixed_[idx]) {
+bool Builder::is_target_(uint32_t base) const {
+  for (auto label : edges_) {
+    auto pos = base ^ table_.code(label);
+    if (bc_[pos].is_fixed()) {
       return false;
     }
   }
   return true;
 }
 
-} //cda_tries
+void Builder::unify_tail_() {
+  auto comp_suffix = [](const suffix_t &lhs, const suffix_t &rhs) {
+    for (size_t i = 0; i < lhs.size(); ++i) {
+      if (i == rhs.size()) {
+        return false;
+      }
+      if (lhs[i] != rhs[i]) {
+        return static_cast<uint8_t>(lhs[i]) < static_cast<uint8_t>(rhs[i]);
+      }
+    }
+    return lhs.size() < rhs.size();
+  };
+
+  auto can_unify = [](const suffix_t &lhs, const suffix_t &rhs) {
+    if (lhs.size() > rhs.size()) {
+      return false;
+    }
+    for (size_t i = 0; i < lhs.size(); ++i) {
+      if (lhs[i] != rhs[i]) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  std::sort(suffixes_.begin(), suffixes_.end(), comp_suffix);
+  tail_.push_back('\0');
+
+  size_t begin = 0;
+  for (size_t i = 1; i < suffixes_.size(); ++i) {
+    auto &lhs = suffixes_[i - 1];
+    auto &rhs = suffixes_[i];
+
+    if (can_unify(lhs, rhs)) {
+      continue;
+    }
+
+    append_tail_(begin, i, lhs.str());
+    begin = i;
+  }
+
+  append_tail_(begin, suffixes_.size(), suffixes_.back().str());
+}
+
+void Builder::append_tail_(size_t begin, size_t end, const char *str) {
+  while (*str != '\0') {
+    tail_.push_back(*str++);
+  }
+  while (begin < end) {
+    auto &suffix = suffixes_[begin++];
+    auto tail_pos = static_cast<uint32_t>(tail_.size() - suffix.size());
+    assert(tail_pos <= BC_UPPER);
+    bc_[suffix.node_pos()].set_link(tail_pos);
+  }
+  tail_.push_back('\0');
+}
+
+} // cda_tries

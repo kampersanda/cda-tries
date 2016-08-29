@@ -1,61 +1,68 @@
 #ifndef CDA_TRIES_ARRAY_HPP
 #define CDA_TRIES_ARRAY_HPP
 
-#include <fstream>
-#include <memory>
-#include <vector>
-
 #include "Basic.hpp"
 
 namespace cda_tries {
 
-template <typename T>
+template <class T>
 class Array {
 public:
   Array() {}
   ~Array() {}
 
-  void Init(size_t len) {
-    len_ = len;
-    array_.reset(new T[len_]);
+  void reset(size_t size) {
+    size_ = size;
+    array_.reset(new T[size_]);
   }
 
-  void Init(size_t len, T init) {
-    Init(len);
-    for (size_t i = 0; i < len_; ++i) {
-      array_[i] = init;
+  void reset(size_t size, const T &initial) {
+    reset(size);
+    for (size_t i = 0; i < size_; ++i) {
+      array_[i] = initial;
     }
   }
 
-  void Build(const std::vector<T> &src) {
-    Init(src.size());
-    for (size_t i = 0; i < len_; ++i) {
-      array_[i] = src[i];
+  void build(const std::vector<T> &array) {
+    reset(array.size());
+    for (size_t i = 0; i < size_; ++i) {
+      array_[i] = array[i];
     }
   }
 
-  const T &operator[](size_t idx) const { return array_[idx]; }
-  T &operator[](size_t idx) { return array_[idx]; }
-
-  bool IsEmpty() const { return len_ == 0; }
-  size_t Length() const { return len_; }
-  size_t AllocSize() const { return sizeof(T) * len_; }
-
-  void Save(std::ostream &os) const {
-    os.write(reinterpret_cast<const char *>(&len_), sizeof(len_));
-    os.write(reinterpret_cast<const char *>(&array_[0]), sizeof(array_[0]) * len_);
+  const T &operator[](size_t pos) const {
+    return array_[pos];
+  }
+  T &operator[](size_t pos) {
+    return array_[pos];
   }
 
-  void Load(std::istream &is) {
-    Clear();
-    is.read(reinterpret_cast<char *>(&len_), sizeof(len_));
-    array_.reset(new T[len_]);
-    is.read(reinterpret_cast<char *>(&array_[0]), sizeof(array_[0]) * len_);
+  size_t size() const {
+    return size_;
+  }
+  size_t size_in_bytes() const {
+    return sizeof(T) * size_;
   }
 
-  void Clear() {
+  bool is_empty() const {
+    return size_ == 0;
+  }
+
+  void write(std::ostream &os) const {
+    os.write(reinterpret_cast<const char *>(&size_), sizeof(size_));
+    os.write(reinterpret_cast<const char *>(&array_[0]), sizeof(array_[0]) * size_);
+  }
+
+  void read(std::istream &is) {
+    clear();
+    is.read(reinterpret_cast<char *>(&size_), sizeof(size_));
+    array_.reset(new T[size_]);
+    is.read(reinterpret_cast<char *>(&array_[0]), sizeof(array_[0]) * size_);
+  }
+
+  void clear() {
     array_.reset();
-    len_ = 0;
+    size_ = 0;
   }
 
   Array(const Array &) = delete;
@@ -63,9 +70,9 @@ public:
 
 private:
   std::unique_ptr<T[]> array_;
-  size_t len_ = 0;
+  size_t size_ = 0;
 };
 
-} //cda_tries
+} // cda_tries
 
-#endif //CDA_TRIES_ARRAY_HPP
+#endif // CDA_TRIES_ARRAY_HPP

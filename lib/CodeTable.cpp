@@ -1,64 +1,87 @@
+#include <array>
 #include <algorithm>
-#include <fstream>
 
 #include "CodeTable.hpp"
 
-using namespace std;
-
 namespace cda_tries {
 
-CodeTable::CodeTable() {
-  for (uint c = 0; c < 256; ++c) {
-    table_[c] = c;
-    table_[c + 256] = c;
-  }
-}
+CodeTable::CodeTable() { clear(); }
 
-size_t CodeTable::Build(const vector<string> &strs) {
+CodeTable::~CodeTable() {}
+
+struct freq_t {
+  size_t freq   = 0;
+  uint8_t label = 0;
+  bool operator<(const freq_t &rhs) const {
+    return freq > rhs.freq;
+  }
+};
+
+size_t CodeTable::build(const std::vector<std::string> &strs) {
   if (strs.empty()) {
     return 0;
   }
 
-  struct freq_t {
-    size_t freq = 0;
-    uint8_t c = 0;
-  };
-  vector<freq_t> freqs(256);
+  std::array<freq_t, 256> freqs;
 
-  for (uint c = 0; c < 256; ++c) {
-    freqs[c].c = c;
-  }
-
-  size_t maxLen = 0;
-  for (size_t i = 0; i < strs.size(); ++i) {
-    for (const uint8_t c : strs[i]) {
-      freqs[c].freq++;
+  for (uint8_t label = 0;; ++label) {
+    freqs[label].label = label;
+    if (label == UINT8_MAX) {
+      break;
     }
-    maxLen = max(maxLen, strs[i].size());
   }
 
-  sort(begin(freqs), end(freqs),
-       [](const freq_t &lhs, const freq_t &rhs) {
-         return lhs.freq > rhs.freq;
-       });
-
-  for (uint c = 0; c < 256; ++c) {
-    table_[freqs[c].c] = c;
+  size_t max_length = 0;
+  for (auto &str : strs) {
+    for (uint8_t label : str) {
+      ++freqs[label].freq;
+    }
+    max_length = std::max(max_length, str.size());
   }
 
-  for (uint c = 0; c < 256; ++c) {
-    table_[table_[c] + 256] = c;
+  std::sort(freqs.begin(), freqs.end());
+
+  for (uint8_t label = 0;; ++label) {
+    table_[freqs[label].label] = label;
+    if (label == UINT8_MAX) {
+      break;
+    }
   }
 
-  return maxLen;
+  for (uint8_t label = 0;; ++label) {
+    table_[table_[label] + 256] = label;
+    if (label == UINT8_MAX) {
+      break;
+    }
+  }
+
+  return max_length;
 }
 
-void CodeTable::Save(ostream &os) const {
+size_t CodeTable::size() const {
+  return 512;
+}
+
+size_t CodeTable::size_in_bytes() const {
+  return sizeof(table_);
+}
+
+void CodeTable::write(std::ostream &os) const {
   os.write(reinterpret_cast<const char *>(&table_[0]), sizeof(table_));
 }
 
-void CodeTable::Load(istream &is) {
+void CodeTable::read(std::istream &is) {
   is.read(reinterpret_cast<char *>(&table_[0]), sizeof(table_));
 }
 
-} //cda_tries
+void CodeTable::clear() {
+  for (uint8_t label = 0;; ++label) {
+    table_[label] = label;
+    table_[label + 256] = label;
+    if (label == UINT8_MAX) {
+      break;
+    }
+  }
+}
+
+} // cda_tries

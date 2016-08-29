@@ -1,121 +1,300 @@
 #include "BitArray.hpp"
 
-using namespace std;
+namespace {
+
+constexpr uint8_t SELECT_TABLE[9][256] = {
+  {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  },
+  {
+    8, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
+    5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
+    6, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
+    5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
+    7, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
+    5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
+    6, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
+    5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
+    8, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
+    5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
+    6, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
+    5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
+    7, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
+    5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
+    6, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1,
+    5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1
+  },
+  {
+    8, 8, 8, 2, 8, 3, 3, 2, 8, 4, 4, 2, 4, 3, 3, 2,
+    8, 5, 5, 2, 5, 3, 3, 2, 5, 4, 4, 2, 4, 3, 3, 2,
+    8, 6, 6, 2, 6, 3, 3, 2, 6, 4, 4, 2, 4, 3, 3, 2,
+    6, 5, 5, 2, 5, 3, 3, 2, 5, 4, 4, 2, 4, 3, 3, 2,
+    8, 7, 7, 2, 7, 3, 3, 2, 7, 4, 4, 2, 4, 3, 3, 2,
+    7, 5, 5, 2, 5, 3, 3, 2, 5, 4, 4, 2, 4, 3, 3, 2,
+    7, 6, 6, 2, 6, 3, 3, 2, 6, 4, 4, 2, 4, 3, 3, 2,
+    6, 5, 5, 2, 5, 3, 3, 2, 5, 4, 4, 2, 4, 3, 3, 2,
+    8, 8, 8, 2, 8, 3, 3, 2, 8, 4, 4, 2, 4, 3, 3, 2,
+    8, 5, 5, 2, 5, 3, 3, 2, 5, 4, 4, 2, 4, 3, 3, 2,
+    8, 6, 6, 2, 6, 3, 3, 2, 6, 4, 4, 2, 4, 3, 3, 2,
+    6, 5, 5, 2, 5, 3, 3, 2, 5, 4, 4, 2, 4, 3, 3, 2,
+    8, 7, 7, 2, 7, 3, 3, 2, 7, 4, 4, 2, 4, 3, 3, 2,
+    7, 5, 5, 2, 5, 3, 3, 2, 5, 4, 4, 2, 4, 3, 3, 2,
+    7, 6, 6, 2, 6, 3, 3, 2, 6, 4, 4, 2, 4, 3, 3, 2,
+    6, 5, 5, 2, 5, 3, 3, 2, 5, 4, 4, 2, 4, 3, 3, 2
+  },
+  {
+    8, 8, 8, 8, 8, 8, 8, 3, 8, 8, 8, 4, 8, 4, 4, 3,
+    8, 8, 8, 5, 8, 5, 5, 3, 8, 5, 5, 4, 5, 4, 4, 3,
+    8, 8, 8, 6, 8, 6, 6, 3, 8, 6, 6, 4, 6, 4, 4, 3,
+    8, 6, 6, 5, 6, 5, 5, 3, 6, 5, 5, 4, 5, 4, 4, 3,
+    8, 8, 8, 7, 8, 7, 7, 3, 8, 7, 7, 4, 7, 4, 4, 3,
+    8, 7, 7, 5, 7, 5, 5, 3, 7, 5, 5, 4, 5, 4, 4, 3,
+    8, 7, 7, 6, 7, 6, 6, 3, 7, 6, 6, 4, 6, 4, 4, 3,
+    7, 6, 6, 5, 6, 5, 5, 3, 6, 5, 5, 4, 5, 4, 4, 3,
+    8, 8, 8, 8, 8, 8, 8, 3, 8, 8, 8, 4, 8, 4, 4, 3,
+    8, 8, 8, 5, 8, 5, 5, 3, 8, 5, 5, 4, 5, 4, 4, 3,
+    8, 8, 8, 6, 8, 6, 6, 3, 8, 6, 6, 4, 6, 4, 4, 3,
+    8, 6, 6, 5, 6, 5, 5, 3, 6, 5, 5, 4, 5, 4, 4, 3,
+    8, 8, 8, 7, 8, 7, 7, 3, 8, 7, 7, 4, 7, 4, 4, 3,
+    8, 7, 7, 5, 7, 5, 5, 3, 7, 5, 5, 4, 5, 4, 4, 3,
+    8, 7, 7, 6, 7, 6, 6, 3, 7, 6, 6, 4, 6, 4, 4, 3,
+    7, 6, 6, 5, 6, 5, 5, 3, 6, 5, 5, 4, 5, 4, 4, 3
+  },
+  {
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4,
+    8, 8, 8, 8, 8, 8, 8, 5, 8, 8, 8, 5, 8, 5, 5, 4,
+    8, 8, 8, 8, 8, 8, 8, 6, 8, 8, 8, 6, 8, 6, 6, 4,
+    8, 8, 8, 6, 8, 6, 6, 5, 8, 6, 6, 5, 6, 5, 5, 4,
+    8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 7, 8, 7, 7, 4,
+    8, 8, 8, 7, 8, 7, 7, 5, 8, 7, 7, 5, 7, 5, 5, 4,
+    8, 8, 8, 7, 8, 7, 7, 6, 8, 7, 7, 6, 7, 6, 6, 4,
+    8, 7, 7, 6, 7, 6, 6, 5, 7, 6, 6, 5, 6, 5, 5, 4,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4,
+    8, 8, 8, 8, 8, 8, 8, 5, 8, 8, 8, 5, 8, 5, 5, 4,
+    8, 8, 8, 8, 8, 8, 8, 6, 8, 8, 8, 6, 8, 6, 6, 4,
+    8, 8, 8, 6, 8, 6, 6, 5, 8, 6, 6, 5, 6, 5, 5, 4,
+    8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 7, 8, 7, 7, 4,
+    8, 8, 8, 7, 8, 7, 7, 5, 8, 7, 7, 5, 7, 5, 5, 4,
+    8, 8, 8, 7, 8, 7, 7, 6, 8, 7, 7, 6, 7, 6, 6, 4,
+    8, 7, 7, 6, 7, 6, 6, 5, 7, 6, 6, 5, 6, 5, 5, 4
+  },
+  {
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 5,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 6,
+    8, 8, 8, 8, 8, 8, 8, 6, 8, 8, 8, 6, 8, 6, 6, 5,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7,
+    8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 7, 8, 7, 7, 5,
+    8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 7, 8, 7, 7, 6,
+    8, 8, 8, 7, 8, 7, 7, 6, 8, 7, 7, 6, 7, 6, 6, 5,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 5,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 6,
+    8, 8, 8, 8, 8, 8, 8, 6, 8, 8, 8, 6, 8, 6, 6, 5,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7,
+    8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 7, 8, 7, 7, 5,
+    8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 7, 8, 7, 7, 6,
+    8, 8, 8, 7, 8, 7, 7, 6, 8, 7, 7, 6, 7, 6, 6, 5
+  },
+  {
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 6,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7,
+    8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 7, 8, 7, 7, 6,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 6,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7,
+    8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 7, 8, 7, 7, 6
+  },
+  {
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7
+  },
+  {
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8
+  }
+};
+
+} // namespace
 
 namespace cda_tries {
 
-void BitArray::Build(const vector<bool> &bits) {
-  numBits_ = bits.size();
-  num1s_ = 0;
+BitArray::BitArray() {}
 
-  bits_.Init(numBits_ / 32 + 1, 0);
-  rank1st_.Init(numBits_ / R1_BLK_LEN + 1, 0);
-  rank2nd_.Init(numBits_ / R2_BLK_LEN + 1, 0);
+BitArray::~BitArray() {}
 
-  for (uint i = 0; i <= numBits_; ++i) {
-    if ((i % R1_BLK_LEN) == 0) {
-      rank1st_[i / R1_BLK_LEN] = num1s_;
-    }
-    if ((i % R2_BLK_LEN) == 0) {
-      rank2nd_[i / R2_BLK_LEN] = num1s_ - rank1st_[i / R1_BLK_LEN];
-    }
+void BitArray::build(const std::vector<bool> &bits) {
+  size_ = bits.size();
+  bits_.reset(size_ / 32 + 1, 0);
+  blocks_.reset(size_ / R1_SIZE + 1);
+
+  for (uint32_t i = 0; i < size_; ++i) {
     if (bits[i]) {
       bits_[i / 32] |= (1U << (i % 32));
-      num1s_++;
     }
   }
+
+  uint32_t sum = 0;
+  for (uint32_t block_pos = 0; block_pos < blocks_.size(); ++block_pos) {
+    auto &block = blocks_[block_pos];
+    block.rank_1st = sum;
+    for (uint32_t offset = 0; offset < R1_PER_R2; ++offset) {
+      block.rank_2nd[offset] = static_cast<uint8_t>(sum - block.rank_1st);
+      auto pos_in_bits = block_pos * R1_PER_R2 + offset;
+      if (pos_in_bits < bits_.size()) {
+        sum += PopCount(bits_[pos_in_bits]);
+      }
+    }
+  }
+  num_1s_ = sum;
 }
 
-uint BitArray::Select(uint cnt) const {
-  cnt++;
+uint32_t BitArray::rank(uint32_t pos) const {
+  auto &block = blocks_[pos / R1_SIZE];
+  return block.rank_1st + block.rank_2nd[pos / R2_SIZE % R1_PER_R2]
+         + PopCount(bits_[pos / 32] & ((1U << (pos % 32)) - 1));
+}
 
-  uint left  = 0;
-  uint right = rank1st_.Length();
+uint32_t BitArray::select(uint32_t count) const {
+  ++count;
 
-  while (left < right){
-    uint mid = (left + right) / 2;
-    if (rank1st_[mid] < cnt) {
-      left  = mid + 1;
+  uint32_t left = 0;
+  auto right = static_cast<uint32_t>(blocks_.size());
+
+  while (left + 1 < right) {
+    auto middle = (left + right) / 2;
+    if (count <= blocks_[middle].rank_1st) {
+      right = middle;
     } else {
-      right = mid;
+      left = middle;
     }
   }
 
-  uint pos1st = (left != 0) ? left - 1 : 0;
-  uint pos2nd = pos1st * BLKS_PER_1ST;
+  auto block_pos = left;
+  count -= blocks_[block_pos].rank_1st;
 
-  cnt -= rank1st_[pos1st];
-  pos2nd++;
-  while ((pos2nd < rank2nd_.Length())
-         && ((pos2nd % BLKS_PER_1ST) != 0)
-         && (rank2nd_[pos2nd] < cnt)){
-    pos2nd++;
-  }
-  pos2nd--;
-
-  cnt -= rank2nd_[pos2nd];
-  uint ret = pos2nd * R2_BLK_LEN;
-  uint posBits = pos2nd * (R2_BLK_LEN / 32);
-  uint rank32 = PopCount(bits_[posBits]);
-
-  if (rank32 < cnt){
-    posBits++;
-    ret += 32;
-    cnt -= rank32;
-  }
-
-  posBits = bits_[posBits];
-  uint rank16 = PopCount(posBits & ((1U << 16) - 1));
-  if (rank16 < cnt){
-    posBits >>= 16;
-    ret += 16;
-    cnt -= rank16;
-  }
-
-  uint rank8  = PopCount(posBits & ((1U << 8) - 1));
-  if (rank8 < cnt){
-    posBits >>= 8;
-    ret += 8;
-    cnt -= rank8;
-  }
-
-  while (cnt > 0){
-    if (posBits & 1){
-      cnt--;
+  uint32_t offset = 1;
+  for (; offset < R1_PER_R2; ++offset) {
+    if (count <= blocks_[block_pos].rank_2nd[offset]) {
+      break;
     }
-    posBits >>= 1;
-    ret++;
+  }
+  count -= blocks_[block_pos].rank_2nd[--offset];
+
+  auto ret = (block_pos * R1_SIZE) + (offset * R2_SIZE);
+  auto bits = bits_[ret / 32];
+
+  {
+    auto _count = PopCount(bits % 65536);
+    if (_count < count) {
+      bits >>= 16;
+      ret += 16;
+      count -= _count;
+    }
+  }
+  {
+    auto _count = PopCount(bits % 256);
+    if (_count < count) {
+      bits >>= 8;
+      ret += 8;
+      count -= _count;
+    }
   }
 
+  ret += SELECT_TABLE[count][bits % 256];
   return ret - 1;
 }
 
-size_t BitArray::NumBits() const {
-  return numBits_;
+size_t BitArray::size() const {
+  return size_;
 }
 
-size_t BitArray::Num1s() const {
-  return num1s_;
+size_t BitArray::size_in_bytes() const {
+  size_t size = 0;
+  size += bits_.size_in_bytes();
+  size += blocks_.size_in_bytes();
+  return size;
 }
 
-size_t BitArray::AllocSize() const {
-  return bits_.AllocSize() + rank1st_.AllocSize() + rank2nd_.AllocSize();
+size_t BitArray::num_1s() const {
+  return num_1s_;
 }
 
-void BitArray::Save(ostream &os) const {
-  bits_.Save(os);
-  rank1st_.Save(os);
-  rank2nd_.Save(os);
-  os.write(reinterpret_cast<const char *>(&numBits_), sizeof(numBits_));
-  os.write(reinterpret_cast<const char *>(&num1s_), sizeof(num1s_));
+size_t BitArray::num_0s() const {
+  return size_ - num_1s_;
 }
 
-void BitArray::Load(istream &is) {
-  bits_.Load(is);
-  rank1st_.Load(is);
-  rank2nd_.Load(is);
-  is.read(reinterpret_cast<char *>(&numBits_), sizeof(numBits_));
-  is.read(reinterpret_cast<char *>(&num1s_), sizeof(num1s_));
+void BitArray::write(std::ostream &os) const {
+  bits_.write(os);
+  blocks_.write(os);
+  os.write(reinterpret_cast<const char *>(&size_), sizeof(size_));
+  os.write(reinterpret_cast<const char *>(&num_1s_), sizeof(num_1s_));
 }
 
-} //cda_tries
+void BitArray::read(std::istream &is) {
+  bits_.read(is);
+  blocks_.read(is);
+  is.read(reinterpret_cast<char *>(&size_), sizeof(size_));
+  is.read(reinterpret_cast<char *>(&num_1s_), sizeof(num_1s_));
+}
+
+void BitArray::clear() {
+  bits_.clear();
+  blocks_.clear();
+  size_ = 0;
+  num_1s_ = 0;
+}
+
+} // cda_tries
