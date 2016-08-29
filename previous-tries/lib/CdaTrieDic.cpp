@@ -4,7 +4,7 @@
 #include "CdaTrieDic.hpp"
 
 namespace cda_tries {
-namespace previous {
+namespace previous_tries {
 
 class CdaBuilder {
 public:
@@ -433,5 +433,5 @@ void CdaTrieDic::enumerate_(uint32_t node_pos, const std::string &prefix,
   }
 }
 
-} // previous
+} // previous_tries
 } // cda_tries

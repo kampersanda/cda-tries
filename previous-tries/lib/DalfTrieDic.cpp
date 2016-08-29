@@ -6,7 +6,7 @@
 #include "DalfTrieDic.hpp"
 
 namespace cda_tries {
-namespace previous {
+namespace previous_tries {
 
 struct edge_t {
   uint8_t  label;
@@ -689,5 +689,5 @@ void DalfTrieDic::enumerate_(uint32_t node_pos, const std::string &prefix,
   }
 }
 
-} // previous
+} // previous_tries
 } // cda_tries

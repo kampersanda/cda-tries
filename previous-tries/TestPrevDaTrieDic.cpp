@@ -5,6 +5,9 @@
 
 #include "PrevDaTrieDic.hpp"
 
+using namespace cda_tries;
+using namespace cda_tries::previous_tries;
+
 namespace {
 
 constexpr size_t NUM_STRS = 1U << 16;
@@ -35,8 +38,8 @@ void MakeStrs(std::vector<std::string> &strs) {
   strs.erase(std::unique(strs.begin(), strs.end()), strs.end());
 }
 
-void TestTrieDic(const std::vector<std::string> &strs, cda_tries::previous::dic_type type) {
-  auto dic = cda_tries::previous::PrevDaTrieDic::create(type);
+void TestTrieDic(const std::vector<std::string> &strs, dic_type type) {
+  auto dic = PrevDaTrieDic::create(type);
   dic->build(strs);
 
   assert(dic->num_strs() == strs.size());
@@ -66,8 +69,8 @@ int main() {
   std::vector<std::string> strs;
   MakeStrs(strs);
 
-  TestTrieDic(strs, cda_tries::previous::dic_type::CDA);
-  TestTrieDic(strs, cda_tries::previous::dic_type::DALF);
+  TestTrieDic(strs, dic_type::CDA);
+  TestTrieDic(strs, dic_type::DALF);
 
   return 0;
 }

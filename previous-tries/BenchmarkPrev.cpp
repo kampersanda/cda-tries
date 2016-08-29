@@ -4,7 +4,7 @@
 #include "PrevDaTrieDic.hpp"
 
 using namespace cda_tries;
-using namespace cda_tries::previous;
+using namespace cda_tries::previous_tries;
 
 namespace {
 

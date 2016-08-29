@@ -9,7 +9,7 @@
 #include "PrevDaTrieDic.hpp"
 
 namespace cda_tries {
-namespace previous {
+namespace previous_tries {
 
 class cda_bc_t {
 public:
@@ -84,7 +84,7 @@ private:
   void enumerate_(uint32_t node_pos, const std::string &prefix, std::vector<std::string> &ret) const;
 };
 
-} // previous
+} // previous_tries
 } // cda_tries
 
 #endif //PREVIOUS_CDA_TRIE_DIC_HPP

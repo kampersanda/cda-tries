@@ -35,4 +35,4 @@ foreach(TEST_SOURCE ${TEST_SOURCES})
   )
 endforeach(TEST_SOURCE)
 
-add_subdirectory(previous)
+add_subdirectory(previous-tries)

@@ -4,7 +4,7 @@
 #include <Basic.hpp>
 
 namespace cda_tries {
-namespace previous {
+namespace previous_tries {
 
 enum class dic_type {
   CDA, DALF
@@ -35,7 +35,7 @@ public:
   virtual void clear() = 0;
 };
 
-} // previous
+} // previous_tries
 } // cda_tries
 
 #endif //PREVIOUS_PREV_DA_TRIE_DIC_HPP

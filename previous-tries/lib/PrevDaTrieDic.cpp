@@ -3,7 +3,7 @@
 #include "DalfTrieDic.hpp"
 
 namespace cda_tries {
-namespace previous {
+namespace previous_tries {
 
 std::unique_ptr<PrevDaTrieDic> PrevDaTrieDic::create(dic_type type) {
   std::unique_ptr<PrevDaTrieDic> ret;
@@ -18,5 +18,5 @@ std::unique_ptr<PrevDaTrieDic> PrevDaTrieDic::create(dic_type type) {
   return ret;
 }
 
-} // previous
+} // previous_tries
 } // cda_tries

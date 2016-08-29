@@ -8,7 +8,7 @@
 #include "PrevDaTrieDic.hpp"
 
 namespace cda_tries {
-namespace previous {
+namespace previous_tries {
 
 constexpr uint32_t FIXED_SHIFT = 23;
 inline constexpr uint32_t float2fixed(float value) {
@@ -115,7 +115,7 @@ private:
   void enumerate_(uint32_t node_pos, const std::string &prefix, std::vector<std::string> &ret) const;
 };
 
-} // previous
+} // previous_tries
 } // cda_tries
 
 #endif //PREVIOUS_DALF_TRIE_DIC_HPP
