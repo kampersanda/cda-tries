@@ -1,9 +1,10 @@
 # cda-tries
 
-This library provides a C++ implementation of compressed double-array tries for a static string dictionary, which supports two primitive operations:
+This C++ library implements compressed double-array tries for a static string dictionary, described in the article.
 
-* Lookup(q) returns the ID in [0, N) if string q is stored, where N is the number of strings.
-* Access(i) returns the string with ID i in [0, N), that is, Access(Lookup(q)) = q if q is stored.
+* S. Kanda, K. Morita, and M. Fuketa, "Compressed double-array tries for string dictionaries supporting fast lookup", _Knowledge and Information Systems_, online first. [[preprint](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXVsdGRvbWFpbnxzaG5za2tuZHxneDoyNjVjZDNjNDcyNDk1ZDg)]
+
+In addition CDA and DALF, which are previous compressed double-array tries, are included at [previous-tries](https://github.com/kamp78/cda-tries/tree/master/previous-tries).
 
 ## How to compile the library
 
@@ -13,6 +14,8 @@ We can compile it by using a CMake build system as follows:
 $ cmake . -DCMAKE_BUILD_TYPE=Release -DENABLE_YCHECK=ON
 $ make
 ```
+
+Please set the compile option `ENABLE_YCHECK` to `OFF` if you use a conventional construction algorithm.
 
 ## How to benchmark the dictionaries
 
@@ -29,17 +32,15 @@ Benchmark <mode> <type> <str_path> <dic_path>
   <dic_path> File path of dictionary
 ```
 
-If you want to build a dictionary `dict.dac` from a file `strs.sorted` by using a DAC representation, please enter the following command:
+If you build a dictionary `dict.dac` from a string file `strs.sorted` by using a DAC representation, please enter the following command:
 
 ```
 $ ./Benchmark 1 2 strs.sorted dict.dac
 ```
 
-Note that `strs.sorted` must be lexicographically sorted.
-In addition, the strings must be ended with the `'\n'` ASCII char and must not include the `'\0'` ASCII char.
+Note that `strs.sorted` must be lexicographically sorted and the strings must not include the `'\0'` ASCII char.
 
-
-If you want to test the dictionary `dict.dac` by using a file `strs.test`, please enter the following command:
+If you test the dictionary `dict.dac` by using a string file `strs.test`, please enter the following command:
 
 ```
 $ ./Benchmark 2 2 strs.test dict.dac
