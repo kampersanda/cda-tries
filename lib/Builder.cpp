@@ -214,7 +214,7 @@ void Builder::arrange_(size_t begin, size_t end, size_t depth, uint32_t node_pos
 
 uint32_t Builder::xcheck_() const {
   if (emp_head_ == NOT_FOUND) {
-    return static_cast<uint32_t>(bc_.size()) ^ edges_[0];
+    return static_cast<uint32_t>(bc_.size()) ^ table_.code(edges_[0]);
   }
 
   auto pos = emp_head_;
@@ -226,12 +226,12 @@ uint32_t Builder::xcheck_() const {
     pos = next_(pos);
   } while (emp_head_ != pos);
 
-  return static_cast<uint32_t>(bc_.size()) ^ edges_[0];
+  return static_cast<uint32_t>(bc_.size()) ^ table_.code(edges_[0]);
 }
 
 uint32_t Builder::ycheck_(uint32_t block_pos) const {
   if (emp_head_ == NOT_FOUND) {
-    return static_cast<uint32_t>(bc_.size()) ^ edges_[0];
+    return static_cast<uint32_t>(bc_.size()) ^ table_.code(edges_[0]);
   }
 
   auto pos = emp_heads_[block_pos];
