@@ -33,8 +33,8 @@ double PlainBc::bytes_per_elem() const {
   return sizeof(bc_t);
 }
 
-void PlainBc::status(std::ostream &os) const {
-  os << "Plain BC status..." << std::endl;
+void PlainBc::stat(std::ostream &os) const {
+  os << "Plain BC stat..." << std::endl;
   os << "size          : " << size() << std::endl;
   os << "size in bytes : " << size_in_bytes() << std::endl;
   os << "num_emps      : " << num_emps() << std::endl;

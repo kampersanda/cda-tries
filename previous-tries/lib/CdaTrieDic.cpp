@@ -373,8 +373,8 @@ size_t CdaTrieDic::size_in_bytes() const {
   return size;
 }
 
-void CdaTrieDic::status(std::ostream &os) const {
-  os << "CDA trie dictionary status..." << std::endl;
+void CdaTrieDic::stat(std::ostream &os) const {
+  os << "CDA trie dictionary stat..." << std::endl;
   os << "num strs     : " << num_strs() << std::endl;
   os << "bc size      : " << bc_size() << std::endl;
   os << "num emps     : " << num_emps() << std::endl;

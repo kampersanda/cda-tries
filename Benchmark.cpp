@@ -152,7 +152,7 @@ int main(int argc, const char *argv[]) {
     }
 
     dic.read(ifs, type);
-    dic.status(std::cout);
+    dic.stat(std::cout);
     std::cout << std::endl;
 
     std::vector<uint32_t> ids;

@@ -98,8 +98,8 @@ double FastDacBc::bytes_per_elem() const {
   return static_cast<double>(size_in_bytes()) / size();
 }
 
-void FastDacBc::status(std::ostream &os) const {
-  os << "Fast Dac BC status..." << std::endl;
+void FastDacBc::stat(std::ostream &os) const {
+  os << "Fast Dac BC stat..." << std::endl;
   os << "size          : " << size() << std::endl;
   os << "size in bytes : " << size_in_bytes() << std::endl;
   os << "num_emps      : " << num_emps() << std::endl;

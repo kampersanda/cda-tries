@@ -54,7 +54,7 @@ public:
   size_t num_emps() const;
   size_t tail_size() const;
   size_t size_in_bytes() const;
-  void status(std::ostream &os) const;
+  void stat(std::ostream &os) const;
 
   void write(std::ostream &os) const;
   void read(std::istream &is);

@@ -33,7 +33,7 @@ public:
   size_t size_in_bytes() const;
   size_t num_emps() const;
   double bytes_per_elem() const;
-  void status(std::ostream &os) const;
+  void stat(std::ostream &os) const;
 
   void write(std::ostream &os) const;
   void read(std::istream &is);

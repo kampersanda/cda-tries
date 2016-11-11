@@ -22,7 +22,7 @@ public:
   virtual size_t size_in_bytes() const = 0;
   virtual size_t num_emps() const = 0;
   virtual double bytes_per_elem() const = 0;
-  virtual void status(std::ostream &os) const = 0;
+  virtual void stat(std::ostream &os) const = 0;
 
   virtual void write(std::ostream &os) const = 0;
   virtual void read(std::istream &is) = 0;

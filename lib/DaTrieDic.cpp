@@ -102,13 +102,13 @@ size_t DaTrieDic::size_in_bytes() const {
   return size;
 }
 
-void DaTrieDic::status(std::ostream &os) const {
-  os << "Double-array trie dictionary status..." << std::endl;
+void DaTrieDic::stat(std::ostream &os) const {
+  os << "Double-array trie dictionary stat..." << std::endl;
   os << "num strs     : " << num_strs() << std::endl;
   os << "bc size      : " << bc_size() << std::endl;
   os << "tail size    : " << tail_size() << std::endl;
   os << "size in bytes: " << size_in_bytes() << std::endl;
-  bc_->status(os);
+  bc_->stat(os);
 }
 
 void DaTrieDic::write(std::ostream &os) const {

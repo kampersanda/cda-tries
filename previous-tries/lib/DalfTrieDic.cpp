@@ -616,8 +616,8 @@ size_t DalfTrieDic::size_in_bytes() const {
   return size;
 }
 
-void DalfTrieDic::status(std::ostream &os) const {
-  os << "DALF trie dictionary status..." << std::endl;
+void DalfTrieDic::stat(std::ostream &os) const {
+  os << "DALF trie dictionary stat..." << std::endl;
   os << "num strs     : " << num_strs() << std::endl;
   os << "bc size      : " << bc_size() << std::endl;
   os << "num emps     : " << num_emps() << std::endl;

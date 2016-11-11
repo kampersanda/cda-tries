@@ -116,7 +116,7 @@ int main(int argc, const char *argv[]) {
     }
 
     dic->read(ifs);
-    dic->status(std::cout);
+    dic->stat(std::cout);
     std::cout << std::endl;
 
     if (!Check(dic, strs)) {
