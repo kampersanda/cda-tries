@@ -28,5 +28,6 @@
 *.app
 
 # My definitions
+.idea
 .DS_Store
 build/

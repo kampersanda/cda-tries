@@ -6,6 +6,11 @@ This C++ library implements compressed double-array tries for a static string di
 
 In addition CDA and DALF, which are previous compressed double-array tries, are included at [previous-tries](https://github.com/kamp78/cda-tries/tree/master/previous-tries).
 
+## Notation
+
+I will not update the library.
+For XCDA proposed in the article, I recommend use of [xcdat library](https://github.com/kamp78/xcdat) that is an enhanced version.
+
 ## How to compile the library
 
 We can compile it by using a CMake build system as follows:

@@ -39,10 +39,12 @@ void BenchmarkLookup(const DaTrieDic &dic, const std::vector<std::string> &strs)
   auto num_strs = strs.size();
   std::cout << "Lookup benchmark on " << RUNS << " runs" << std::endl;
 
+  volatile size_t ret;
+
   StopWatch sw;
   for (size_t i = 0; i < RUNS; ++i) {
     for (size_t j = 0; j < num_strs; ++j) {
-      dic.lookup(strs[j].c_str());
+      ret = dic.lookup(strs[j].c_str());
     }
   }
 
