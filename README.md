@@ -1,15 +1,15 @@
 # cda-tries
 
-This C++ library implements compressed double-array tries for a static string dictionary, described in the article.
+This C++ library implements compressed double-array tries for a static string dictionary described in the article.
 
 * S. Kanda, K. Morita, and M. Fuketa, "[Compressed double-array tries for string dictionaries supporting fast lookup](http://dx.doi.org/10.1007/s10115-016-0999-8)", _Knowledge and Information Systems_, online first. [[preprint](https://sites.google.com/site/shnskknd/kais2016.pdf)]
 
-In addition CDA and DALF, which are previous compressed double-array tries, are included at [previous-tries](https://github.com/kamp78/cda-tries/tree/master/previous-tries).
+In addition, CDA and DALF, previous compressed double-array tries, are included at [previous-tries](https://github.com/kamp78/cda-tries/tree/master/previous-tries).
 
 ## Notation
 
-I will not update the library.
-For XCDA proposed in the article, I recommend use of [xcdat library](https://github.com/kamp78/xcdat) that is an enhanced version.
+The library is experimental.
+For XCDA proposed in the article, I recommend use of [Xcdat](https://github.com/kamp78/xcdat) that is an enhanced version.
 
 ## How to compile the library
 
