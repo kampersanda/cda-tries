@@ -1,6 +1,6 @@
 # cda-tries
 
-This C++ library implements compressed double-array tries for a static string dictionary described in the article.
+This C++ library implements compressed double-array tries for a static string dictionary described in
 
 * S. Kanda, K. Morita, and M. Fuketa, "[Compressed double-array tries for string dictionaries supporting fast lookup](http://dx.doi.org/10.1007/s10115-016-0999-8)", _Knowledge and Information Systems_, online first. [[preprint](https://sites.google.com/site/shnskknd/kais2016.pdf)]
 

@@ -1,3 +1,5 @@
+#undef NDEBUG
+
 #include <algorithm>
 #include <cassert>
 #include <random>
