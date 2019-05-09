@@ -2,7 +2,7 @@
 
 This C++ library implements compressed double-array tries for a static string dictionary described in
 
-* S. Kanda, K. Morita, and M. Fuketa, "[Compressed double-array tries for string dictionaries supporting fast lookup](http://dx.doi.org/10.1007/s10115-016-0999-8)", _Knowledge and Information Systems_, online first. [[pdf](https://sites.google.com/site/shnskknd/KAIS2016.pdf)]
+* S. Kanda, K. Morita, and M. Fuketa, "[Compressed double-array tries for string dictionaries supporting fast lookup](http://dx.doi.org/10.1007/s10115-016-0999-8)", _Knowledge and Information Systems_, online first. [[pdf](https://drive.google.com/file/d/1_BknOv1misIK-iUk4u9c9yZi3qmWNruf/view?usp=sharing)]
 
 In addition, CDA and DALF, previous compressed double-array tries, are included at [previous-tries](https://github.com/kamp78/cda-tries/tree/master/previous-tries).
 
